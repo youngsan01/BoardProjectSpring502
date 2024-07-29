@@ -1,14 +1,20 @@
 package org.choongang.member.validators;
 
 
+import lombok.RequiredArgsConstructor;
+import org.choongang.global.validators.MobilValidator;
 import org.choongang.global.validators.PasswordValidator;
 import org.choongang.member.controllers.RequestJoin;
+import org.choongang.member.repositories.MemberRepository;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.Errors;
 import org.springframework.validation.Validator;
 
 @Component
-public class JoinValidator implements Validator, PasswordValidator {
+@RequiredArgsConstructor
+public class JoinValidator implements Validator, PasswordValidator, MobilValidator {
+
+    private final MemberRepository memberRepository;
 
     @Override
     public boolean supports(Class<?> clazz) {
@@ -34,6 +40,11 @@ public class JoinValidator implements Validator, PasswordValidator {
         String confirmPassword = form.getConfirmPassword();
         String mobile = form.getMobile();
 
+        // 1. 이미 가입된 회원인지 체크
+        if (memberRepository.exists(email)) {
+            errors.rejectValue("email", "DuplicateEmail", "Duplicated");
+        }
+
         // 2. 비밀번호, 비밀번호 확인 일치 여부
         if (!password.equals(confirmPassword)) {
             errors.rejectValue("confirmPassword", "Mismatch.password");
@@ -45,5 +56,8 @@ public class JoinValidator implements Validator, PasswordValidator {
         }
 
         // 4. 휴대전화번호 형식 체크
+        if (!mobile.equals(mobile)) {
+            errors.rejectValue("mobile", "Mobile");
+        }
     }
 }
